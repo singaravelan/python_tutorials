@@ -1,0 +1,81 @@
+import streamlit as st
+from streamlit.components.v1 import html
+
+# Initialize session state to store boxes
+if 'boxes' not in st.session_state:
+    st.session_state.boxes = ["Box 1", "Box 2", "Box 3"]
+
+st.title("Interactive Draggable Boxes")
+
+# Function to add a new box
+def add_box():
+    if st.session_state.new_box_name and st.session_state.new_box_name not in st.session_state.boxes:
+        st.session_state.boxes.append(st.session_state.new_box_name)
+        st.session_state.new_box_name = ""  # Clear the input
+
+# Input for adding new boxes
+with st.form("add_box_form"):
+    st.text_input("New box name", key="new_box_name")
+    st.form_submit_button("Add Box", on_click=add_box)
+
+# Generate the HTML/JavaScript for the draggable and editable boxes
+box_html = """
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<style>
+    .sortable-item {
+        padding: 10px;
+        margin: 5px;
+        background: lightblue;
+        cursor: move;
+        border-radius: 5px;
+    }
+    .sortable-ghost {
+        opacity: 0.5;
+        background: #c8ebfb;
+    }
+    #sortable-container {
+        min-height: 200px;
+        border: 2px dashed #ccc;
+        padding: 10px;
+        border-radius: 5px;
+    }
+</style>
+
+<div id="sortable-container">
+"""
+
+# Add each box to the container
+for i, box in enumerate(st.session_state.boxes):
+    box_html += f"""
+    <div class="sortable-item" 
+         ondblclick="renameBox(this)" 
+         data-id="{i}">{box}</div>
+    """
+
+box_html += """
+</div>
+
+<script>
+// Initialize sortable
+document.addEventListener('DOMContentLoaded', function() {
+    new Sortable(document.getElementById('sortable-container'), {
+        animation: 150,
+        ghostClass: 'sortable-ghost'
+    });
+});
+
+// Function to rename boxes on double click
+function renameBox(element) {
+    const currentName = element.textContent;
+    const newName = prompt("Rename box:", currentName);
+    if (newName && newName !== currentName) {
+        element.textContent = newName;
+        // Send the update to Streamlit (requires custom component for full implementation)
+    }
+}
+</script>
+"""
+
+html(box_html, height=400)
+
+st.write("Double-click a box to rename it")
